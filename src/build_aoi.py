@@ -14,10 +14,14 @@ from .config import (
     INTERIM_DIR,
     LA_TIMES_AOI_URL,
     METRIC_CRS_FALLBACK,
-    QGIS_DIR,
+    AOI_LAYER,
     RAW_CRS,
     TRANSIT_BUFFER_M,
+    TRANSIT_BUFFER_LAYER,
     ensure_directories,
+    interim_geopackage_path,
+    USER_AGENT,
+    HTTP_TIMEOUT_SECONDS,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -41,8 +45,8 @@ def fetch_koreatown_aoi() -> tuple[gpd.GeoDataFrame, dict[str, object]]:
         response = requests.get(
             LA_TIMES_AOI_URL,
             params=params,
-            timeout=60,
-            headers={"User-Agent": "koreatown-sidewalk-accessibility/0.1"},
+            timeout=HTTP_TIMEOUT_SECONDS,
+            headers={"User-Agent": USER_AGENT},
         )
         metadata["http_status"] = response.status_code
         response.raise_for_status()
@@ -104,13 +108,16 @@ def build_aoi_outputs() -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, dict[str, o
 
     aoi_path = INTERIM_DIR / "koreatown_aoi.geojson"
     buffer_path = INTERIM_DIR / "koreatown_aoi_transit_buffer.geojson"
-    gpkg_path = QGIS_DIR / "koreatown_aoi.gpkg"
+    gpkg_path = interim_geopackage_path()
     metadata_path = INTERIM_DIR / "koreatown_aoi.metadata.json"
 
     aoi.to_file(aoi_path, driver="GeoJSON")
-    aoi.to_file(gpkg_path, layer="aoi", driver="GPKG")
+    if gpkg_path.exists():
+        gpkg_path.unlink()
+    aoi.to_file(gpkg_path, layer=AOI_LAYER, driver="GPKG")
     aoi_buffer = buffered_aoi(aoi)
     aoi_buffer.to_file(buffer_path, driver="GeoJSON")
+    aoi_buffer.to_file(gpkg_path, layer=TRANSIT_BUFFER_LAYER, driver="GPKG")
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return aoi, aoi_buffer, metadata
 
@@ -118,6 +125,9 @@ def build_aoi_outputs() -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, dict[str, o
 def load_aoi(path: Path | None = None) -> gpd.GeoDataFrame:
     path = path or (INTERIM_DIR / "koreatown_aoi.geojson")
     if not path.exists():
+        gpkg = interim_geopackage_path()
+        if gpkg.exists():
+            return gpd.read_file(gpkg, layer=AOI_LAYER)
         aoi, _, _ = build_aoi_outputs()
         return aoi
     return gpd.read_file(path)

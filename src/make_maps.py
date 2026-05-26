@@ -5,17 +5,9 @@ from pathlib import Path
 
 import geopandas as gpd
 
-from .config import HTML_DIR, MAPS_DIR, RAW_CRS
+from .config import HTML_DIR, LABEL_COLORS, MAP_DPI, MAP_FIGSIZE, MAP_SOURCE_NOTE, MAPS_DIR, RAW_CRS
 
 LOGGER = logging.getLogger(__name__)
-
-LABEL_COLORS = {
-    "accessible": "#2ca25f",
-    "missing_ramp": "#de2d26",
-    "disconnected": "#756bb1",
-    "obstacle_or_driveway_conflict": "#f16913",
-    "needs_review": "#636363",
-}
 
 
 def _plot_base(ax, aoi: gpd.GeoDataFrame, layers: dict[str, gpd.GeoDataFrame]) -> None:
@@ -31,7 +23,7 @@ def _finalize(ax, title: str) -> None:
     ax.figure.text(
         0.01,
         0.01,
-        "Heuristic geospatial QA labels only; not an ADA compliance determination. Sources: LA City NavigateLA, LA Times, LA Metro GTFS.",
+        MAP_SOURCE_NOTE,
         fontsize=8,
     )
     ax.figure.tight_layout()
@@ -41,7 +33,7 @@ def _save_plot(path: Path, title: str, aoi: gpd.GeoDataFrame, layers: dict[str, 
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(figsize=(11, 8.5), dpi=180)
+    fig, ax = plt.subplots(figsize=MAP_FIGSIZE, dpi=MAP_DPI)
     _plot_base(ax, aoi, layers)
     data = labeled.query(filter_query).copy() if filter_query else labeled.copy()
     if not data.empty:
@@ -74,7 +66,7 @@ def make_static_maps(
 
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(figsize=(11, 8.5), dpi=180)
+    fig, ax = plt.subplots(figsize=MAP_FIGSIZE, dpi=MAP_DPI)
     _plot_base(ax, aoi_4326, layers)
     labeled_4326.plot(ax=ax, color="#bdbdbd", edgecolor="none", alpha=0.35)
     if transit_stops is not None and not transit_stops.empty:

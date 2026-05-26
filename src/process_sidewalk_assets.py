@@ -10,7 +10,7 @@ import pandas as pd
 
 from .build_aoi import estimate_metric_crs, load_aoi
 from .clean_geometries import clean_geodataframe
-from .config import ARCGIS_LAYERS, PROCESSED_DIR, RAW_CRS, processed_geojson_path, raw_geojson_path
+from .config import ARCGIS_LAYERS, CLEANING_STATS_NAME, PROCESSED_DIR, RAW_CRS, processed_geopackage_path, raw_geojson_path
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,25 +52,32 @@ def normalize_sidewalk_featuretype(value: Any) -> str:
     return "unknown"
 
 
-def _clip_to_aoi(gdf: gpd.GeoDataFrame, aoi: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def _clip_to_aoi(gdf: gpd.GeoDataFrame, aoi_4326: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     if gdf.empty:
         return gdf
     try:
-        return gpd.clip(gdf.to_crs(RAW_CRS), aoi.to_crs(RAW_CRS))
+        return gpd.clip(gdf.to_crs(RAW_CRS), aoi_4326)
     except Exception as exc:  # noqa: BLE001
         LOGGER.warning("AOI clip failed; keeping envelope-filtered features: %s", exc)
         return gdf
 
 
-def process_assets() -> tuple[dict[str, gpd.GeoDataFrame], list[dict[str, Any]]]:
-    aoi = load_aoi()
-    metric_crs = estimate_metric_crs(aoi)
+def process_assets(
+    aoi: gpd.GeoDataFrame | None = None,
+    metric_crs: str | None = None,
+) -> tuple[dict[str, gpd.GeoDataFrame], list[dict[str, Any]]]:
+    aoi = aoi if aoi is not None else load_aoi()
+    aoi_4326 = aoi.to_crs(RAW_CRS)
+    metric_crs = metric_crs or estimate_metric_crs(aoi)
     layers: dict[str, gpd.GeoDataFrame] = {}
     stats: list[dict[str, Any]] = []
+    processed_gpkg = processed_geopackage_path()
+    if processed_gpkg.exists():
+        processed_gpkg.unlink()
 
     for layer in ARCGIS_LAYERS.values():
         raw = _read_raw_layer(raw_geojson_path(layer))
-        raw = _clip_to_aoi(raw, aoi)
+        raw = _clip_to_aoi(raw, aoi_4326)
         cleaned, layer_stats = clean_geodataframe(
             raw,
             source_layer=layer.name,
@@ -100,8 +107,8 @@ def process_assets() -> tuple[dict[str, gpd.GeoDataFrame], list[dict[str, Any]]]
         layers[layer.clean_layer] = cleaned
         stats.append(layer_stats)
         if not cleaned.empty:
-            cleaned.to_file(processed_geojson_path(layer.clean_layer), driver="GeoJSON")
+            cleaned.to_file(processed_gpkg, layer=layer.clean_layer, driver="GPKG")
 
-    stats_path = PROCESSED_DIR / "cleaning_stats.json"
+    stats_path = PROCESSED_DIR / CLEANING_STATS_NAME
     stats_path.write_text(json.dumps(stats, indent=2), encoding="utf-8")
     return layers, stats

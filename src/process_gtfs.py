@@ -6,8 +6,17 @@ from zipfile import ZipFile
 import geopandas as gpd
 import pandas as pd
 
-from .config import INTERIM_DIR, PROCESSED_DIR, RAW_CRS, RAW_DIR
-from .download_data import download_gtfs_feeds
+from .config import (
+    GTFS_BUS_ZIP_NAME,
+    GTFS_RAIL_ZIP_NAME,
+    INTERIM_DIR,
+    RAW_CRS,
+    RAW_DIR,
+    TRANSIT_BUFFER_LAYER,
+    TRANSIT_STOPS_LAYER,
+    interim_geopackage_path,
+    processed_geopackage_path,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,22 +45,26 @@ def _read_stops(zip_path, source_feed: str) -> gpd.GeoDataFrame:
     )
 
 
-def process_gtfs_stops(download_missing: bool = True) -> gpd.GeoDataFrame:
-    if download_missing and not (RAW_DIR / "gtfs_bus.zip").exists():
-        download_gtfs_feeds()
-    if download_missing and not (RAW_DIR / "gtfs_rail.zip").exists():
-        download_gtfs_feeds()
+def _load_transit_buffer() -> gpd.GeoDataFrame | None:
+    gpkg = interim_geopackage_path()
+    if gpkg.exists():
+        return gpd.read_file(gpkg, layer=TRANSIT_BUFFER_LAYER).to_crs(RAW_CRS)
+    legacy_path = INTERIM_DIR / "koreatown_aoi_transit_buffer.geojson"
+    if legacy_path.exists():
+        return gpd.read_file(legacy_path).to_crs(RAW_CRS)
+    return None
 
-    bus = _read_stops(RAW_DIR / "gtfs_bus.zip", "bus")
-    rail = _read_stops(RAW_DIR / "gtfs_rail.zip", "rail")
+
+def process_gtfs_stops() -> gpd.GeoDataFrame:
+    bus = _read_stops(RAW_DIR / GTFS_BUS_ZIP_NAME, "bus")
+    rail = _read_stops(RAW_DIR / GTFS_RAIL_ZIP_NAME, "rail")
     combined = pd.concat([bus, rail], ignore_index=True)
     if combined.empty:
         return gpd.GeoDataFrame(combined, geometry=[], crs=RAW_CRS)
 
     combined = gpd.GeoDataFrame(combined, geometry="geometry", crs=RAW_CRS)
-    buffer_path = INTERIM_DIR / "koreatown_aoi_transit_buffer.geojson"
-    if buffer_path.exists():
-        buffer_aoi = gpd.read_file(buffer_path).to_crs(RAW_CRS)
+    buffer_aoi = _load_transit_buffer()
+    if buffer_aoi is not None and not buffer_aoi.empty:
         combined = gpd.clip(combined, buffer_aoi)
 
     combined["_geometry_wkb"] = combined.geometry.apply(lambda geom: geom.wkb_hex)
@@ -59,7 +72,6 @@ def process_gtfs_stops(download_missing: bool = True) -> gpd.GeoDataFrame:
     combined = combined.drop_duplicates(subset=subset_cols).drop(columns=["_geometry_wkb"])
     combined = combined.reset_index(drop=True)
 
-    path = PROCESSED_DIR / "transit_stops_clean.geojson"
     if not combined.empty:
-        combined.to_file(path, driver="GeoJSON")
+        combined.to_file(processed_geopackage_path(), layer=TRANSIT_STOPS_LAYER, driver="GPKG")
     return combined

@@ -38,7 +38,7 @@ QA fields include:
 
 The labeled sidewalk layer is enriched with nearest ramp, confirmed ramp, intersection, crosswalk, and transit-stop distances. All nearest calculations are performed in the project metric CRS.
 
-Driveway conflicts are estimated from direct overlap area and a 1 meter sidewalk buffer intersection.
+Driveway conflicts are estimated from vectorized overlap area and a 1 meter sidewalk buffer intersection.
 
 ## Graph Connectivity Approximation
 
@@ -55,4 +55,6 @@ The primary labeled layer is also exported as:
 `outputs/qgis/sidewalk_accessibility_labeled.geojson`
 
 CSV QA tables are written to `outputs/tables/`, and maps are written to `outputs/maps/` plus optional Folium HTML under `outputs/html/`.
+
+Large raw, interim, processed, and output files are generated locally and ignored by Git. The repository commits source code, tests, documentation, and the GitHub Pages demo under `docs/`.
 

@@ -17,6 +17,31 @@ QGIS_DIR: Final[Path] = OUTPUTS_DIR / "qgis"
 HTML_DIR: Final[Path] = OUTPUTS_DIR / "html"
 STYLES_DIR: Final[Path] = QGIS_DIR / "styles"
 
+INTERIM_GPKG_NAME: Final[str] = "koreatown_interim.gpkg"
+PROCESSED_GPKG_NAME: Final[str] = "koreatown_processed_layers.gpkg"
+FINAL_GPKG_NAME: Final[str] = "koreatown_sidewalk_accessibility.gpkg"
+LABELED_GEOJSON_NAME: Final[str] = "sidewalk_accessibility_labeled.geojson"
+QA_ISSUES_LAYER: Final[str] = "qa_issues_points_or_polygons"
+LABELED_LAYER: Final[str] = "sidewalk_accessibility_labeled"
+TRANSIT_STOPS_LAYER: Final[str] = "transit_stops_clean"
+AOI_LAYER: Final[str] = "aoi"
+TRANSIT_BUFFER_LAYER: Final[str] = "aoi_transit_buffer"
+CLEANING_STATS_NAME: Final[str] = "cleaning_stats.json"
+
+QA_SUMMARY_CSV: Final[str] = "qa_summary.csv"
+LABEL_COUNTS_CSV: Final[str] = "label_counts.csv"
+SOURCE_FEATURE_COUNTS_CSV: Final[str] = "source_feature_counts.csv"
+TRANSIT_STOP_COUNTS_CSV: Final[str] = "transit_stop_counts.csv"
+TOP_ISSUES_CSV: Final[str] = "top_10_issue_examples.csv"
+CLEANING_STATS_CSV: Final[str] = "cleaning_stats.csv"
+TOP_ISSUE_EXAMPLES_LIMIT: Final[int] = 10
+
+ARCGIS_PAGE_SIZE: Final[int] = 20_000
+HTTP_TIMEOUT_SECONDS: Final[int] = 60
+DOWNLOAD_TIMEOUT_SECONDS: Final[int] = 120
+REQUEST_RETRIES: Final[int] = 3
+USER_AGENT: Final[str] = "koreatown-sidewalk-accessibility/0.1"
+
 NAVIGATE_LA_BASE_URL: Final[str] = (
     "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer"
 )
@@ -31,6 +56,8 @@ GTFS_BUS_PRIMARY_URL: Final[str] = (
 )
 GTFS_BUS_FALLBACK_URL: Final[str] = "https://gitlab.com/LACMTA/gtfs_bus/-/raw/master/gtfs_bus.zip"
 GTFS_RAIL_URL: Final[str] = "https://gitlab.com/LACMTA/gtfs_rail/-/raw/master/gtfs_rail.zip"
+GTFS_BUS_ZIP_NAME: Final[str] = "gtfs_bus.zip"
+GTFS_RAIL_ZIP_NAME: Final[str] = "gtfs_rail.zip"
 
 AOI_FALLBACK_BBOX: Final[tuple[float, float, float, float]] = (
     -118.325,
@@ -49,12 +76,69 @@ CROSSWALK_OR_RAMP_CONTEXT_M: Final[float] = 25.0
 DRIVEWAY_BUFFER_M: Final[float] = 1.0
 DRIVEWAY_OVERLAP_RATIO_THRESHOLD: Final[float] = 0.05
 
+BASE_ACCESSIBILITY_SCORE: Final[int] = 100
+MIN_ACCESSIBILITY_SCORE: Final[int] = 0
+MAX_ACCESSIBILITY_SCORE: Final[int] = 100
+SCORE_WEIGHTS: Final[dict[str, int]] = {
+    "issue_missing_ramp": 35,
+    "issue_disconnected": 25,
+    "issue_driveway_conflict": 20,
+    "issue_geometry_repaired": 10,
+    "issue_unknown_type": 10,
+}
+ISSUE_COLUMNS: Final[tuple[str, ...]] = (
+    "issue_missing_ramp",
+    "issue_driveway_conflict",
+    "issue_disconnected",
+    "issue_unknown_type",
+    "issue_geometry_repaired",
+)
+REVIEW_ISSUE_COLUMN: Final[str] = "issue_needs_review"
+
 ALLOWED_LABELS: Final[tuple[str, ...]] = (
     "accessible",
     "missing_ramp",
     "disconnected",
     "obstacle_or_driveway_conflict",
     "needs_review",
+)
+LABEL_PRIORITY: Final[tuple[tuple[str, str], ...]] = (
+    ("issue_needs_review", "needs_review"),
+    ("issue_missing_ramp", "missing_ramp"),
+    ("issue_disconnected", "disconnected"),
+    ("issue_driveway_conflict", "obstacle_or_driveway_conflict"),
+)
+LABEL_COLORS: Final[dict[str, str]] = {
+    "accessible": "#2ca25f",
+    "missing_ramp": "#de2d26",
+    "disconnected": "#756bb1",
+    "obstacle_or_driveway_conflict": "#f16913",
+    "needs_review": "#636363",
+}
+MAP_SOURCE_NOTE: Final[str] = (
+    "Heuristic geospatial QA labels only; not an ADA compliance determination. "
+    "Sources: LA City NavigateLA, LA Times, LA Metro GTFS."
+)
+MAP_FIGSIZE: Final[tuple[float, float]] = (11, 8.5)
+MAP_DPI: Final[int] = 180
+
+CLEAN_OUTPUT_LAYERS: Final[tuple[str, ...]] = (
+    "sidewalk_polygons_clean",
+    "ramps_clean",
+    "driveways_clean",
+    "curbs_clean",
+    "parkways_clean",
+    "alley_sidewalks_clean",
+    "crosswalks_clean",
+    "intersections_clean",
+    "streets_centerline_clean",
+)
+FINAL_GPKG_LAYERS: Final[tuple[str, ...]] = (
+    AOI_LAYER,
+    LABELED_LAYER,
+    *CLEAN_OUTPUT_LAYERS,
+    TRANSIT_STOPS_LAYER,
+    QA_ISSUES_LAYER,
 )
 
 
@@ -121,8 +205,21 @@ def raw_metadata_path(layer: ArcGISLayer) -> Path:
 
 
 def processed_geojson_path(layer_name: str) -> Path:
+    # Backward-compatible local export path; processed GeoPackage is preferred.
     return PROCESSED_DIR / f"{layer_name}.geojson"
 
 
+def interim_geopackage_path() -> Path:
+    return INTERIM_DIR / INTERIM_GPKG_NAME
+
+
+def processed_geopackage_path() -> Path:
+    return PROCESSED_DIR / PROCESSED_GPKG_NAME
+
+
 def geopackage_path() -> Path:
-    return QGIS_DIR / "koreatown_sidewalk_accessibility.gpkg"
+    return QGIS_DIR / FINAL_GPKG_NAME
+
+
+def labeled_geojson_path() -> Path:
+    return QGIS_DIR / LABELED_GEOJSON_NAME

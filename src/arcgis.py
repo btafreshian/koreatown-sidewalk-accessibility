@@ -9,11 +9,17 @@ from typing import Any
 
 import requests
 
-from .config import NAVIGATE_LA_BASE_URL, RAW_CRS, ArcGISLayer
+from .config import (
+    ARCGIS_PAGE_SIZE,
+    HTTP_TIMEOUT_SECONDS,
+    NAVIGATE_LA_BASE_URL,
+    RAW_CRS,
+    REQUEST_RETRIES,
+    USER_AGENT,
+    ArcGISLayer,
+)
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_TIMEOUT = 60
-DEFAULT_PAGE_SIZE = 20_000
 
 
 def utc_now_iso() -> str:
@@ -32,8 +38,8 @@ def _request_json(
     session: requests.Session,
     url: str,
     params: dict[str, Any] | None = None,
-    retries: int = 3,
-    timeout: int = DEFAULT_TIMEOUT,
+    retries: int = REQUEST_RETRIES,
+    timeout: int = HTTP_TIMEOUT_SECONDS,
 ) -> tuple[dict[str, Any], int]:
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
@@ -59,7 +65,7 @@ def fetch_layer_metadata(
 ) -> dict[str, Any]:
     own_session = session is None
     session = session or requests.Session()
-    session.headers.update({"User-Agent": "koreatown-sidewalk-accessibility/0.1"})
+    session.headers.update({"User-Agent": USER_AGENT})
     try:
         data, status = _request_json(session, f"{NAVIGATE_LA_BASE_URL}/{layer.layer_id}", {"f": "pjson"})
         fields = [field.get("name") for field in data.get("fields", []) if field.get("name")]
@@ -78,13 +84,13 @@ def fetch_layer_metadata(
 def query_layer_geojson(
     layer: ArcGISLayer,
     bbox: tuple[float, float, float, float],
-    page_size: int = DEFAULT_PAGE_SIZE,
-    retries: int = 3,
+    page_size: int = ARCGIS_PAGE_SIZE,
+    retries: int = REQUEST_RETRIES,
     session: requests.Session | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     own_session = session is None
     session = session or requests.Session()
-    session.headers.update({"User-Agent": "koreatown-sidewalk-accessibility/0.1"})
+    session.headers.update({"User-Agent": USER_AGENT})
 
     url = f"{NAVIGATE_LA_BASE_URL}/{layer.layer_id}/query"
     feature_collection = empty_feature_collection()

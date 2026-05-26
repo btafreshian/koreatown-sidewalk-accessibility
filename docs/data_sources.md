@@ -80,4 +80,4 @@ This project uses OpenSidewalks only as schema inspiration. It does not claim st
 
 ## Terms And Licensing Note
 
-The pipeline records source URLs and timestamps in metadata files under `data/raw/` and `data/interim/`. Before public redistribution, review current source terms from LA City, LA Times, LA Metro, and OpenSidewalks directly.
+The pipeline records source URLs and timestamps in local metadata files under `data/raw/` and `data/interim/`. Those generated files are ignored by Git. Before public redistribution, review current source terms from LA City, LA Times, LA Metro, and OpenSidewalks directly.

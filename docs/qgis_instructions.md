@@ -33,8 +33,6 @@ Style `sidewalk_accessibility_labeled` by categorized `ai_label`:
 
 Style ramps as blue points, transit stops as dark blue circles, driveways as orange outlines, and the AOI as a no-fill black outline.
 
-Optional QML starter styles are stored in `outputs/qgis/styles/`.
-
 ## Screenshot Checklist
 
 - Full AOI map with label legend visible.

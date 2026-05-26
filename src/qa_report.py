@@ -7,7 +7,17 @@ import geopandas as gpd
 import pandas as pd
 
 from .arcgis import load_metadata_files
-from .config import RAW_DIR, TABLES_DIR
+from .config import (
+    CLEANING_STATS_CSV,
+    LABEL_COUNTS_CSV,
+    QA_SUMMARY_CSV,
+    RAW_DIR,
+    SOURCE_FEATURE_COUNTS_CSV,
+    TABLES_DIR,
+    TOP_ISSUE_EXAMPLES_LIMIT,
+    TOP_ISSUES_CSV,
+    TRANSIT_STOP_COUNTS_CSV,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,24 +41,28 @@ def write_qa_tables(
 
     source_rows = []
     for record in metadata:
-        clean_layer = None
-        for layer_name, gdf in layers.items():
-            if str(record.get("layer_id")) == str(gdf.get("source_layer_id", pd.Series([None])).iloc[0] if not gdf.empty else ""):
-                clean_layer = layer_name
-                break
         source_rows.append(
             {
                 "source_layer": record.get("layer_name"),
                 "layer_id": record.get("layer_id"),
                 "raw_feature_count": record.get("feature_count", 0),
-                "clean_layer": clean_layer,
                 "errors": "; ".join(record.get("errors", [])),
             }
         )
     source_feature_counts = pd.DataFrame(source_rows)
     if not stats_df.empty:
         source_feature_counts = source_feature_counts.merge(
-            stats_df[["source_layer", "output_count", "invalid_geometry_count", "repaired_geometry_count", "duplicate_geometry_count", "empty_geometry_count"]],
+            stats_df[
+                [
+                    "source_layer",
+                    "clean_layer",
+                    "output_count",
+                    "invalid_geometry_count",
+                    "repaired_geometry_count",
+                    "duplicate_geometry_count",
+                    "empty_geometry_count",
+                ]
+            ],
             on="source_layer",
             how="left",
         )
@@ -85,18 +99,18 @@ def write_qa_tables(
     issue_cols = [col for col in labeled.columns if col.startswith("issue_")] if labeled is not None else []
     top_issues = (
         labeled.loc[labeled[issue_cols].any(axis=1), ["source_object_id", "ai_label", "accessibility_score", "label_reason"] + issue_cols]
-        .head(10)
+        .head(TOP_ISSUE_EXAMPLES_LIMIT)
         .copy()
         if labeled is not None and not labeled.empty and issue_cols
         else pd.DataFrame()
     )
 
-    source_feature_counts.to_csv(TABLES_DIR / "source_feature_counts.csv", index=False)
-    label_counts.to_csv(TABLES_DIR / "label_counts.csv", index=False)
-    transit_counts.to_csv(TABLES_DIR / "transit_stop_counts.csv", index=False)
-    qa_summary.to_csv(TABLES_DIR / "qa_summary.csv", index=False)
-    top_issues.to_csv(TABLES_DIR / "top_10_issue_examples.csv", index=False)
-    stats_df.to_csv(TABLES_DIR / "cleaning_stats.csv", index=False)
+    source_feature_counts.to_csv(TABLES_DIR / SOURCE_FEATURE_COUNTS_CSV, index=False)
+    label_counts.to_csv(TABLES_DIR / LABEL_COUNTS_CSV, index=False)
+    transit_counts.to_csv(TABLES_DIR / TRANSIT_STOP_COUNTS_CSV, index=False)
+    qa_summary.to_csv(TABLES_DIR / QA_SUMMARY_CSV, index=False)
+    top_issues.to_csv(TABLES_DIR / TOP_ISSUES_CSV, index=False)
+    stats_df.to_csv(TABLES_DIR / CLEANING_STATS_CSV, index=False)
 
     return {
         "source_feature_counts": source_feature_counts,

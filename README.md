@@ -2,19 +2,19 @@
 
 I built a QGIS-ready, AI-labeled pedestrian infrastructure dataset for Koreatown, Los Angeles by cleaning and validating public sidewalk, curb-ramp, driveway, crosswalk, intersection, street-centerline, and transit-stop data. The project exports GeoPackage and GeoJSON assets with transparent QA flags and heuristic labels for downstream geospatial AI review workflows.
 
-This is not an ADA compliance audit. The labels are practical geospatial QA signals for data refinement, map review, and AI-ready asset preparation.
+This is not an ADA compliance audit. The labels are heuristic geospatial QA signals for data refinement, map review, and AI-ready asset preparation.
 
 Live demo: https://btafreshian.github.io/koreatown-sidewalk-accessibility/
 
 Interactive map: https://btafreshian.github.io/koreatown-sidewalk-accessibility/interactive_accessibility_map.html
 
-## Why This Project Matters
+## Why It Matters
 
-Sidewalk accessibility datasets are often fragmented across polygon, point, line, and tabular transit sources. This project demonstrates how to turn those public datasets into a reproducible, reviewable asset package: cleaned geometries, normalized attributes, proximity measures, connectivity approximations, heuristic labels, QA tables, and QGIS-ready outputs.
+Sidewalk accessibility data often lives across separate polygon, point, line, and tabular sources. This project demonstrates a reproducible workflow for turning public civic GIS data into a reviewable geospatial asset package: cleaned geometries, normalized attributes, transit context, proximity metrics, connectivity approximations, QA tables, and AI-ready heuristic labels.
 
 ## Data Sources
 
-- LA City NavigateLA ArcGIS REST MapServer: sidewalk, curb, driveway, ramp, crosswalk, intersection, parkway, alley sidewalk, and street-centerline layers.
+- LA City NavigateLA ArcGIS REST MapServer: sidewalks, access ramps, driveways, curbs, crosswalks, intersections, parkways, alley sidewalks, sidewalk boundaries, and street centerlines.
 - LA Times Neighborhood Boundaries FeatureServer: Koreatown AOI polygon.
 - LA Metro GTFS: bus and rail stops.
 - OpenSidewalks schema: reference inspiration only, not a strict validation target.
@@ -25,50 +25,37 @@ See [docs/data_sources.md](docs/data_sources.md) for endpoints and fallback beha
 
 ```mermaid
 flowchart LR
-    A[Fetch Koreatown AOI] --> B[Download NavigateLA Layers]
-    A --> C[Download Metro GTFS]
-    B --> D[Clean and Validate Geometries]
-    C --> E[Build Transit Stops Layer]
-    D --> F[Spatial Metrics and Connectivity]
-    E --> F
-    F --> G[Heuristic Accessibility Labels]
-    G --> H[GeoPackage and GeoJSON Exports]
-    G --> I[QA Tables and Portfolio Maps]
+    A[Build Koreatown AOI] --> B[Download Public Data]
+    B --> C[Clean and Validate Geometries]
+    C --> D[Process Sidewalk Assets and GTFS Stops]
+    D --> E[Calculate Spatial Metrics]
+    E --> F[Assign Heuristic QA Labels]
+    F --> G[Export QGIS Assets, QA Tables, and Maps]
 ```
 
-## Install
+## Reproduce Locally
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-```
-
-## Run
-
-```powershell
 python -m src.pipeline
+python -m pytest
 ```
 
-GNU Make targets are also provided:
+Make targets are also available:
 
 ```powershell
 make install
 make all
 make test
+make clean
 ```
 
-Individual steps:
+## Generated Outputs
 
-```powershell
-make download
-make process
-make qa
-make maps
-```
-
-## Outputs
+Large raw, interim, processed, and QGIS output files are generated locally and ignored by Git. After running the pipeline, review:
 
 - `outputs/qgis/koreatown_sidewalk_accessibility.gpkg`
 - `outputs/qgis/sidewalk_accessibility_labeled.geojson`
@@ -77,17 +64,11 @@ make maps
 - `outputs/tables/source_feature_counts.csv`
 - `outputs/tables/transit_stop_counts.csv`
 - `outputs/maps/final_accessibility_map.png`
-- `outputs/maps/missing_ramps_map.png`
-- `outputs/maps/driveway_conflicts_map.png`
-- `outputs/maps/transit_access_map.png`
-- `outputs/maps/qa_issues_map.png`
 - `outputs/html/interactive_accessibility_map.html`
-- `docs_site/index.html`
-- `docs_site/interactive_accessibility_map.html`
-- `docs/index.html`
-- `docs/interactive_accessibility_map.html`
 
-## Main Labels
+The committed public demo lives in `docs/` for GitHub Pages.
+
+## Labels
 
 - `accessible`
 - `missing_ramp`
@@ -95,36 +76,17 @@ make maps
 - `obstacle_or_driveway_conflict`
 - `needs_review`
 
-The label layer preserves the issue booleans and `label_reason` so reviewers can see why each feature was assigned a label.
+The labeled layer preserves issue booleans and `label_reason` fields so reviewers can inspect why each feature received its label.
 
-## QA Summary
-
-After running the pipeline, review:
-
-- `outputs/tables/qa_summary.csv`
-- `outputs/tables/label_counts.csv`
-- `outputs/tables/top_10_issue_examples.csv`
-
-These tables report raw and cleaned feature counts, geometry repair counts, duplicate/empty geometry counts, transit stop counts, label counts, and example issue records.
-
-Latest generated QA snapshot:
+## Latest QA Snapshot
 
 - 51,664 raw NavigateLA features downloaded.
 - 40,122 clipped/cleaned NavigateLA features exported across source layers.
 - 11,294 final sidewalk polygon features labeled.
 - 272 bus/rail transit stops captured in or near the buffered AOI.
 - Label counts: 6,982 `accessible`, 3,982 `obstacle_or_driveway_conflict`, 240 `missing_ramp`, 90 `needs_review`.
-- 0 invalid, repaired, empty, or exact duplicate geometries were reported in the latest source pull.
 
-## QGIS Screenshot Placeholders
-
-Add final screenshots after opening the GeoPackage in QGIS:
-
-- Full Koreatown label map
-- Missing ramp review layer
-- Driveway conflict review layer
-- Transit access context layer
-- Attribute table showing QA flags and label reasons
+These counts reflect the latest successful pipeline run and may change as public source data changes.
 
 ## Limitations
 
@@ -138,4 +100,4 @@ Add final screenshots after opening the GeoPackage in QGIS:
 - Add field-verified examples or street-level imagery review for selected issue clusters.
 - Compare heuristic labels against OpenSidewalks-style schema fields.
 - Add model-ready tiles or training samples for downstream geospatial AI workflows.
-- Build a QGIS layout and screenshots for portfolio publishing.
+- Build QGIS layout screenshots for portfolio presentation.

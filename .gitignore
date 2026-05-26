@@ -1,4 +1,7 @@
 .venv/
+venv/
+env/
+
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -6,4 +9,17 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 *.egg-info/
+
+data/raw/
+data/interim/
+data/processed/
+outputs/
+docs_site/
+docs/manual_download_instructions.md
+
+*.zip
+*.gpkg
+*.parquet
+*.geoparquet
+*.log
 
