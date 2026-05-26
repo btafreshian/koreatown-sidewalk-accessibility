@@ -1,0 +1,9 @@
+{
+  "source_url": "https://services5.arcgis.com/7nsPwEMP38bSkCjy/arcgis/rest/services/LA_Times_Neighborhoods/FeatureServer/0/query",
+  "fetch_timestamp_utc": "2026-05-26T18:40:55+00:00",
+  "fallback_used": false,
+  "errors": [],
+  "http_status": 200,
+  "feature_count": 1,
+  "metric_crs": "EPSG:32611"
+}

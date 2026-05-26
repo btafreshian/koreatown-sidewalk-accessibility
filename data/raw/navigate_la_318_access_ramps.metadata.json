@@ -1,0 +1,33 @@
+{
+  "source_url": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/318/query",
+  "layer_id": 318,
+  "layer_key": "access_ramps",
+  "layer_name": "Access Ramps",
+  "fetch_timestamp_utc": "2026-05-26T18:40:59+00:00",
+  "http_status": 200,
+  "feature_count": 1487,
+  "crs": "EPSG:4326",
+  "fields": [
+    "OBJECTID",
+    "SHAPE",
+    "ASSETID",
+    "PIND",
+    "HASRAMP",
+    "NOTES",
+    "CURBRAMP_ID",
+    "CRTN_DT",
+    "USER_ID",
+    "LST_MODF_DT"
+  ],
+  "errors": [],
+  "fallback_used": false,
+  "bbox": [
+    -118.322967200412,
+    34.0524088529667,
+    -118.286797195427,
+    34.0763358565636
+  ],
+  "service_name": "Access Ramps",
+  "geometry_type": "esriGeometryPoint",
+  "max_record_count": 20000
+}

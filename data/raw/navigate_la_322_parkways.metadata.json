@@ -1,0 +1,38 @@
+{
+  "source_url": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/322/query",
+  "layer_id": 322,
+  "layer_key": "parkways",
+  "layer_name": "Parkways",
+  "fetch_timestamp_utc": "2026-05-26T18:41:12+00:00",
+  "http_status": 200,
+  "feature_count": 8521,
+  "crs": "EPSG:4326",
+  "fields": [
+    "OBJECTID",
+    "SHAPE",
+    "ASSETID",
+    "PIND",
+    "NOTES",
+    "SHAPE_Length",
+    "SHAPE_Area",
+    "PARKWAY_ID",
+    "CRTN_DT",
+    "USER_ID",
+    "LST_MODF_DT",
+    "CALC_WIDTH",
+    "CALC_LENGTH",
+    "CALC_MIN_WIDTH",
+    "CALC_MAX_WIDTH"
+  ],
+  "errors": [],
+  "fallback_used": false,
+  "bbox": [
+    -118.322967200412,
+    34.0524088529667,
+    -118.286797195427,
+    34.0763358565636
+  ],
+  "service_name": "Parkways",
+  "geometry_type": "esriGeometryPolygon",
+  "max_record_count": 20000
+}

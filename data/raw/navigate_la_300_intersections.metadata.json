@@ -1,0 +1,40 @@
+{
+  "source_url": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/300/query",
+  "layer_id": 300,
+  "layer_key": "intersections",
+  "layer_name": "Intersections",
+  "fetch_timestamp_utc": "2026-05-26T18:40:58+00:00",
+  "http_status": 200,
+  "feature_count": 508,
+  "crs": "EPSG:4326",
+  "fields": [
+    "OBJECTID",
+    "SHAPE",
+    "ASSETID",
+    "CL_NODE_ID",
+    "X",
+    "Y",
+    "LAT",
+    "LON",
+    "TYPE",
+    "CRTN_DT",
+    "LST_MODF_DT",
+    "USER_ID",
+    "FROM_ST",
+    "TO_ST",
+    "TOOLTIP",
+    "ZIP_CODE",
+    "NLA_URL"
+  ],
+  "errors": [],
+  "fallback_used": false,
+  "bbox": [
+    -118.322967200412,
+    34.0524088529667,
+    -118.286797195427,
+    34.0763358565636
+  ],
+  "service_name": "Intersections",
+  "geometry_type": "esriGeometryPoint",
+  "max_record_count": 20000
+}
